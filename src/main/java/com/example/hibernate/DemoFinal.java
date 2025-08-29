@@ -1,15 +1,15 @@
 package com.example.hibernate;
 
-import com.example.hibernate.dominio.Alumno;
-import com.example.hibernate.dominio.Calificacion;
-import com.example.hibernate.dominio.Curso;
-import com.example.hibernate.dominio.Examen;
-import com.example.hibernate.dominio.Persona;
-import com.example.hibernate.dominio.Profesor;
+import com.example.hibernate.dominio.busqueda.*;
+import com.example.hibernate.dominio.postulacion.Genero;
+import com.example.hibernate.dominio.postulacion.Postulacion;
+import com.example.hibernate.dominio.postulacion.Postulante;
+import com.example.hibernate.dominio.postulacion.recursoPostulacion.Cv;
 import com.example.hibernate.utils.BDUtils;
 import java.time.LocalDateTime;
-import static java.util.Arrays.asList;
-import java.util.List;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import javax.persistence.EntityManager;
 
 public class DemoFinal {
@@ -19,56 +19,65 @@ public class DemoFinal {
         EntityManager em = BDUtils.getEntityManager();
         BDUtils.comenzarTransaccion(em);
 
-//        try {
-            Alumno marcos = new Alumno();
-            //Insert
-            em.persist(marcos);
-//        } catch (Exception e) {
-//            BDUtils.rollback(em);
-//            return;
-//        }
+        // Crear postulacion
+        Postulacion postulacion = new Postulacion();
+        Cv cv = new Cv("Mi CV", "http://mi-cv.com");
+        postulacion.setCv(cv);
 
-        //Update
-        marcos.setNombre("Marcos"); //Entidad administrada -> detecta cambios
-        marcos.setPromedio(6.75);
+        // Crear localización
+        Localizacion localizacion = new Localizacion();
+        localizacion.setPais("Argentina");
+        localizacion.setProvincia("Buenos Aires");
+        localizacion.setCiudad("La Plata");
+        localizacion.setDireccion("Calle 123");
 
-        Curso dds = new Curso();
-        dds.setHorario(LocalDateTime.now());
-        em.persist(dds); //antes de asociar entidades deben estar persistidas
+        // Crear perfil de búsqueda
+        PerfilBusqueda perfilBusqueda = new PerfilBusqueda();
+        perfilBusqueda.setEdadInicial(25);
+        perfilBusqueda.setEdadFinal(50);
+        perfilBusqueda.setGeneroBuscado(Genero.MASCULINO);
 
-        marcos.setCursos(asList(dds));
+        // Crear búsqueda
+        Busqueda busqueda = new Busqueda();
+        busqueda.setFechaPublicacion(LocalDateTime.now());
+        busqueda.setFechaVencimiento(LocalDateTime.now().plusDays(4));
+        busqueda.setPerfilBuscado(perfilBusqueda);
+        busqueda.setGeneroObra("Drama");
+        busqueda.setRequisitosPostulacion(new ArrayList<>());
+        busqueda.setTipoRemuneracion(TipoRemuneracion.AD_HONOREM);
+        busqueda.setLocalizacion(localizacion);
+        busqueda.setInformacionAdicional("Información adicional de la búsqueda");
+        busqueda.setEstado(EstadoBusqueda.ACTIVA);
+        busqueda.setPostulaciones(Arrays.asList(postulacion));
 
-        System.out.println("ID MARCOS: " + marcos.getId());
+        // Vincular postulacion con busqueda
+        postulacion.setBusqueda(busqueda);
 
-        Profesor julian = new Profesor();
-        julian.setNombre("Julian");
-        julian.setSalario(1000.55);
+        // Crear postulante
+        Postulante postulante = new Postulante();
+        postulante.setNombre("Julian");
+        postulante.setApellido("Martinez");
+        postulante.setEdad(24);
+        postulante.setGenero(Genero.MASCULINO);
 
-        em.persist(julian);
+        // Vincular postulante con postulacion
+        postulacion.setPostulante(postulante);
 
-        //examen
-        Examen examenDeMarcos = new Examen();
-        examenDeMarcos.setAlumno(marcos);
-        examenDeMarcos.setCalificacion(Calificacion.BIEN);
-        examenDeMarcos.setNota(6);
-
-        em.persist(examenDeMarcos);
-
-        //JPQL Query
-        List<Persona> personas = em
-                // equivalente a: select * from persona where persona.nombre = 'Julian'
-                .createQuery("select p from Persona p where p.nombre = ?1", Persona.class) //ojo, query no tipada
-                .setParameter(1, "Julian")
-                .getResultList();
-
-        System.out.println(personas);
-
-        //Delete
-        for (Persona persona : personas) {
-            em.remove(persona);
-        }
+        // Persistir entidades
+        em.persist(cv);
+        em.persist(perfilBusqueda);
+        em.persist(localizacion);
+        em.persist(busqueda);
+        em.persist(postulacion);
+        em.persist(postulante);
 
         BDUtils.commit(em);
+
+        // Consulta de prueba
+        System.out.println("Postulaciones existentes:");
+        em.createQuery("SELECT p FROM Postulacion p", Postulacion.class)
+                .getResultList()
+                .forEach(p -> System.out.println(p.getId() + " - " + p.getPostulante().getNombre()));
     }
 
 }
