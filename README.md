@@ -13,3 +13,9 @@ K3002
 - Martín Alberto Rincón
 - Nicolás Mauro Piacentini
 - Simón Alejandro Rojas Pereira
+
+## Diagrama de Clases
+![alt text](<src/main/resources/DER.png>)
+
+## DER
+![alt text](<src/main/resources/Diagrama_de_Clases.png>)
